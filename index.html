@@ -70,6 +70,11 @@ h2{text-align:center;font-weight:700;font-size:20px;margin:6px 0 4px}
 .nf .plus{width:44px;height:44px;margin:0;border:none;border-radius:10px;background:var(--yellow);color:#000;font-size:22px;font-weight:700}
 .nf .plus:hover{background:#ffe34d}
 .nf .plus.ok{background:#fff}
+.iw{position:relative;flex:1;min-width:0;display:flex}
+.nf .iw input{width:100%;padding-right:40px}
+.clr{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:none;border-radius:50%;background:transparent;color:var(--gray);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+.clr:hover{color:#ff453a;background:rgba(255,69,58,.14)}
+.iw input:placeholder-shown+.clr{display:none}
 .prow{display:flex;gap:8px;animation:rowIn .2s ease}
 .prow+.prow{margin-top:8px}
 @keyframes rowIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
@@ -143,14 +148,14 @@ textarea{width:100%;height:min(52vh,380px);border:none;resize:none;background:tr
         <div class="hint">Terisi otomatis sesuai jam WIB saat ini — pilih manual kapan saja jika perlu.</div>
       <div class="blk">
         <div class="blk-h"><span class="role">Menyerahkan</span><select id="dinas_1" aria-label="Jenis dinas (Menyerahkan)"><option>Dinas Pagi</option><option>Dinas Siang</option><option>Dinas Malam</option></select></div>
-        <div class="nf"><label for="dok_1">Dokter jaga</label><div class="line"><input type="text" id="dok_1" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('dok_1','dokter',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
+        <div class="nf"><label for="dok_1">Dokter jaga</label><div class="line"><div class="iw"><input type="text" id="dok_1" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="clr" tabindex="-1" aria-label="Kosongkan nama">✕</button></div><button type="button" class="plus" onclick="tambahNama('dok_1','dokter',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
         <div class="chips" id="ch_dok_1"></div>
         <div class="nf"><div class="lbl" id="plbl_1">Petugas</div><div class="plist" id="pl_1"></div></div>
         <div class="chips" id="ch_per_1"></div>
       </div>
       <div class="blk">
         <div class="blk-h"><span class="role">Menerima</span><select id="dinas_2" aria-label="Jenis dinas (Menerima)"><option>Dinas Pagi</option><option>Dinas Siang</option><option>Dinas Malam</option></select></div>
-        <div class="nf"><label for="dok_2">Dokter jaga</label><div class="line"><input type="text" id="dok_2" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('dok_2','dokter',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
+        <div class="nf"><label for="dok_2">Dokter jaga</label><div class="line"><div class="iw"><input type="text" id="dok_2" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="clr" tabindex="-1" aria-label="Kosongkan nama">✕</button></div><button type="button" class="plus" onclick="tambahNama('dok_2','dokter',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
         <div class="chips" id="ch_dok_2"></div>
         <div class="nf"><div class="lbl" id="plbl_2">Petugas</div><div class="plist" id="pl_2"></div></div>
         <div class="chips" id="ch_per_2"></div>
@@ -250,10 +255,18 @@ window.onload = function(){
     el.addEventListener('input',muatMemori);
     el.addEventListener('keydown',e=>{
       if(e.key!=='Enter') return;
-      e.preventDefault(); tambahNama(id,jenisDari(id),el.nextElementSibling); el.blur();
+      e.preventDefault(); tambahNama(id,jenisDari(id),el.closest('.line').querySelector('.plus')); el.blur();
     });
   });
   GRUP.forEach(g=>$(g.box).addEventListener('click',e=>klikChip(g,e)));
+  // Tombol ✕ di dalam kotak nama: kosongkan seketika, kursor tetap di kolom
+  document.addEventListener('mousedown',e=>{ if(e.target.closest('.clr')) e.preventDefault(); });
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('.clr'); if(!b) return;
+    const inp=b.parentElement.querySelector('input');
+    inp.value=""; delete inp.dataset.done;
+    inp.dispatchEvent(new Event('input',{bubbles:true})); inp.focus();
+  });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') togglePratinjau(false); });
   window.addEventListener('online',()=>{ tampilStatus(); sinkronDariSheet(); });
   window.addEventListener('offline',tampilStatus);
@@ -427,7 +440,7 @@ function nomori(n){
 function tambahBaris(n,fokus){
   const pertama=!$('pl_'+n).children.length;
   const d=document.createElement('div'); d.className='prow';
-  d.innerHTML=`<input type="text" data-n="${n}" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done">`+
+  d.innerHTML=`<div class="iw"><input type="text" data-n="${n}" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="clr" tabindex="-1" aria-label="Kosongkan nama">✕</button></div>`+
     (pertama ? `<button type="button" class="plus" aria-label="Tambah petugas" title="Tambah petugas" onclick="tambahBaris(${n},true)">＋</button>`
              : `<button type="button" class="plus hapus" aria-label="Hapus baris petugas" title="Hapus" onclick="hapusBaris(this,${n})">✕</button>`);
   $('pl_'+n).appendChild(d); nomori(n); updateLaporan();
