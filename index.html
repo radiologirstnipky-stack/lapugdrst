@@ -50,17 +50,36 @@ h2{text-align:center;font-weight:700;font-size:20px;margin:6px 0 4px}
 .plus:active{transform:scale(.92)}
 .plus.ok{background:var(--yellow);color:#000}
 
-/* Saran nama di bawah input */
-.row.nm{flex-wrap:wrap}
-.sug{flex:0 0 100%;margin:10px -15px -12px;max-height:190px;overflow-y:auto;overscroll-behavior:contain;background:#0f0f0f;border-top:.5px solid var(--line);border-radius:0 0 11px 11px;animation:sugIn .18s ease}
-.sug[hidden]{display:none}
-@keyframes sugIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-.sg{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 6px 0 15px;min-height:44px;border-bottom:.5px solid var(--line);cursor:pointer}
-.sg:last-child{border-bottom:none}
-.sg:hover{background:var(--yellow-dim)}
-.sg span{flex:1;padding:11px 0;font-size:15px;overflow:hidden;text-overflow:ellipsis}
-.del{border:none;background:transparent;color:var(--gray);font-family:inherit;font-size:14px;min-width:44px;height:44px;cursor:pointer;border-radius:8px}
-.del:hover{color:#ff453a}
+/* Dinas jaga: input + chip nama */
+.card-h{display:flex;justify-content:space-between;align-items:center;padding:14px 15px 0}
+.ttl{font-weight:700;font-size:17px;color:var(--yellow)}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--yellow-dim);color:var(--yellow)}
+.badge.off{background:rgba(255,159,10,.15);color:#ff9f0a}
+.hint{font-size:13px;color:var(--gray);padding:8px 15px 12px;border-bottom:.5px solid var(--line)}
+.blk{padding:14px 15px 18px;border-bottom:.5px solid var(--line)}
+.blk:last-child{border-bottom:none}
+.blk-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.role{font-size:14px;font-weight:600}
+.blk-h select{border:1px solid #3a3a3a;border-radius:10px;background:#101010;color:var(--yellow);font-family:inherit;font-weight:600;font-size:15px;height:40px;padding:0 10px}
+.blk-h select option{background:#1a1a1a;color:#fff}
+.nf{margin-top:14px}
+.nf label{display:block;font-size:12px;color:var(--gray);margin:0 0 5px 2px}
+.nf .line{display:flex;gap:8px}
+.nf input{flex:1;min-width:0;height:44px;border:1px solid #3a3a3a;border-radius:10px;background:#101010;padding:0 12px;font-size:16px;color:var(--text);font-family:inherit}
+.nf input:focus,.nf input:focus-visible{outline:none;border-color:var(--yellow)}
+.nf .plus{width:44px;height:44px;margin:0;border:none;border-radius:10px;background:var(--yellow);color:#000;font-size:22px;font-weight:700}
+.nf .plus:hover{background:#ffe34d}
+.nf .plus.ok{background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;border:1px solid #3a3a3a;background:#1a1a1a;border-radius:999px;overflow:hidden;transition:background .15s,border-color .15s}
+.chip button{border:none;background:transparent;font-family:inherit;cursor:pointer;touch-action:manipulation}
+.chip .cn{color:var(--text);font-size:14px;padding:8px 4px 8px 13px}
+.chip .cx{color:var(--gray);font-size:17px;line-height:1;padding:8px 12px 8px 6px}
+.chip .cx:hover{color:#ff453a}
+.chip:hover{border-color:#5a5a5a}
+.chip.on{background:var(--yellow-dim);border-color:var(--yellow)}
+.chip.on .cn{color:var(--yellow);font-weight:600}
+.kosong{font-size:13px;color:var(--gray)}
 
 /* Bar bawah */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:100;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));background:rgba(10,10,10,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--yellow-dim)}
@@ -114,22 +133,25 @@ textarea{width:100%;height:min(52vh,380px);border:none;resize:none;background:tr
         <div class="row"><label for="waktu_laporan">Tanggal (WIB)</label><input type="datetime-local" id="waktu_laporan"></div>
       </div>
 
-      <div class="section-label">Shift Yang Menyerahkan</div>
       <div class="card">
-        <div class="row"><label for="dinas_1">Jenis Dinas</label>
-          <select id="dinas_1"><option>Dinas Pagi</option><option>Dinas Siang</option><option>Dinas Malam</option></select></div>
-        <div class="row nm"><label for="dok_1">Dokter Jaga</label><input type="text" id="dok_1" placeholder="Dokter" autocomplete="off"><button type="button" class="plus" onclick="tambahNama('dok_1','dokter',this)" aria-label="Tambah nama ke spreadsheet" title="Tambah ke spreadsheet">＋</button><div class="sug" id="sug_dok_1" hidden></div></div>
-        <div class="row nm"><label for="per_1_1">Petugas 1</label><input type="text" id="per_1_1" placeholder="Petugas" autocomplete="off"><button type="button" class="plus" onclick="tambahNama('per_1_1','perawat',this)" aria-label="Tambah nama ke spreadsheet" title="Tambah ke spreadsheet">＋</button><div class="sug" id="sug_per_1_1" hidden></div></div>
-        <div class="row nm"><label for="per_1_2">Petugas 2</label><input type="text" id="per_1_2" placeholder="Petugas" autocomplete="off"><button type="button" class="plus" onclick="tambahNama('per_1_2','perawat',this)" aria-label="Tambah nama ke spreadsheet" title="Tambah ke spreadsheet">＋</button><div class="sug" id="sug_per_1_2" hidden></div></div>
+        <div class="card-h"><span class="ttl">Dinas Jaga</span><span class="badge" id="badge">Google Sheets</span></div>
+        <div class="hint">Terisi otomatis sesuai jam WIB saat ini — pilih manual kapan saja jika perlu.</div>
+      <div class="blk">
+        <div class="blk-h"><span class="role">Menyerahkan</span><select id="dinas_1" aria-label="Jenis dinas (Menyerahkan)"><option>Dinas Pagi</option><option>Dinas Siang</option><option>Dinas Malam</option></select></div>
+        <div class="nf"><label for="dok_1">Dokter jaga</label><div class="line"><input type="text" id="dok_1" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('dok_1','dokter',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
+        <div class="chips" id="ch_dok_1"></div>
+        <div class="nf"><label for="per_1_1">Petugas 1</label><div class="line"><input type="text" id="per_1_1" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('per_1_1','perawat',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
+        <div class="nf"><label for="per_1_2">Petugas 2</label><div class="line"><input type="text" id="per_1_2" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('per_1_2','perawat',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
+        <div class="chips" id="ch_per_1"></div>
       </div>
-
-      <div class="section-label">Shift Yang Menerima</div>
-      <div class="card">
-        <div class="row"><label for="dinas_2">Jenis Dinas</label>
-          <select id="dinas_2"><option>Dinas Pagi</option><option>Dinas Siang</option><option>Dinas Malam</option></select></div>
-        <div class="row nm"><label for="dok_2">Dokter Jaga</label><input type="text" id="dok_2" placeholder="Dokter" autocomplete="off"><button type="button" class="plus" onclick="tambahNama('dok_2','dokter',this)" aria-label="Tambah nama ke spreadsheet" title="Tambah ke spreadsheet">＋</button><div class="sug" id="sug_dok_2" hidden></div></div>
-        <div class="row nm"><label for="per_2_1">Petugas 1</label><input type="text" id="per_2_1" placeholder="Petugas" autocomplete="off"><button type="button" class="plus" onclick="tambahNama('per_2_1','perawat',this)" aria-label="Tambah nama ke spreadsheet" title="Tambah ke spreadsheet">＋</button><div class="sug" id="sug_per_2_1" hidden></div></div>
-        <div class="row nm"><label for="per_2_2">Petugas 2</label><input type="text" id="per_2_2" placeholder="Petugas" autocomplete="off"><button type="button" class="plus" onclick="tambahNama('per_2_2','perawat',this)" aria-label="Tambah nama ke spreadsheet" title="Tambah ke spreadsheet">＋</button><div class="sug" id="sug_per_2_2" hidden></div></div>
+      <div class="blk">
+        <div class="blk-h"><span class="role">Menerima</span><select id="dinas_2" aria-label="Jenis dinas (Menerima)"><option>Dinas Pagi</option><option>Dinas Siang</option><option>Dinas Malam</option></select></div>
+        <div class="nf"><label for="dok_2">Dokter jaga</label><div class="line"><input type="text" id="dok_2" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('dok_2','dokter',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
+        <div class="chips" id="ch_dok_2"></div>
+        <div class="nf"><label for="per_2_1">Petugas 1</label><div class="line"><input type="text" id="per_2_1" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('per_2_1','perawat',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
+        <div class="nf"><label for="per_2_2">Petugas 2</label><div class="line"><input type="text" id="per_2_2" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('per_2_2','perawat',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
+        <div class="chips" id="ch_per_2"></div>
+      </div>
       </div>
     </div>
 
@@ -208,19 +230,15 @@ window.onload = function(){
   $('waktu_laporan').addEventListener('change',()=>{ for(const k in manual) delete manual[k]; otomatis(); updateLaporan(); });
   document.querySelectorAll('input, select').forEach(el=>el.addEventListener('input',updateLaporan));
   NAMA_IDS.forEach(id=>{
-    const el=$(id), box=$('sug_'+id);
+    const el=$(id);
     el.addEventListener('change',autoSimpan);
-    el.addEventListener('focus',()=>renderSaran(id));
-    el.addEventListener('input',()=>renderSaran(id));
-    el.addEventListener('blur',()=>{ box.hidden=true; });
-    box.addEventListener('mousedown',e=>e.preventDefault());   // jaga fokus input saat daftar disentuh
-    box.addEventListener('click',e=>{
-      const baris=e.target.closest('.sg'); if(!baris) return;
-      const nama=baris.dataset.n, jenis=jenisDari(id), b=e.target.closest('.del');
-      if(b){ hapusNama(jenis,nama); renderSaran(id); toast("Nama dihapus"); return; }
-      el.value=nama; el.dispatchEvent(new Event('input',{bubbles:true})); box.hidden=true; el.blur();
+    el.addEventListener('input',muatMemori);
+    el.addEventListener('keydown',e=>{
+      if(e.key!=='Enter') return;
+      e.preventDefault(); tambahNama(id,jenisDari(id),el.nextElementSibling); el.blur();
     });
   });
+  GRUP.forEach(g=>$(g.box).addEventListener('click',e=>klikChip(g,e)));
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') togglePratinjau(false); });
   window.addEventListener('online',()=>{ tampilStatus(); sinkronDariSheet(); });
   window.addEventListener('offline',tampilStatus);
@@ -285,20 +303,35 @@ function gabung(kunci,arr){
   if(baru.length) tulisJSON(kunci,data.sort((a,b)=>a.localeCompare(b)));
   return baru;
 }
-/* ---------- Saran nama di bawah input (dengan hapus) ---------- */
+/* ---------- Nama tersimpan sebagai chip ---------- */
 const jenisDari = id => id.startsWith('dok')?'dokter':'perawat';
 const kunciDari = j => j==='dokter'?'m_dok':'m_per';
-function renderSaran(id){
-  const box=$('sug_'+id), q=$(id).value.trim().toLowerCase();
-  const daftar=bacaLokal(kunciDari(jenisDari(id))).filter(n=>!q||n.toLowerCase().includes(q));
-  if(!daftar.length){ box.hidden=true; return; }
-  box.innerHTML=daftar.map(n=>`<div class="sg" data-n="${esc(n)}"><span>${esc(n)}</span><button type="button" class="del" aria-label="Hapus ${esc(n)}">✕</button></div>`).join('');
-  box.hidden=false;
+const GRUP = [1,2].flatMap(n=>[
+  {box:`ch_dok_${n}`, jenis:'dokter',  ids:[`dok_${n}`]},
+  {box:`ch_per_${n}`, jenis:'perawat', ids:[`per_${n}_1`,`per_${n}_2`]}
+]);
+function muatMemori(){
+  GRUP.forEach(g=>{
+    const dipakai=g.ids.map(i=>$(i).value.trim().toLowerCase());
+    const daftar=bacaLokal(kunciDari(g.jenis));
+    $(g.box).innerHTML = daftar.length
+      ? daftar.map(n=>`<span class="chip${dipakai.includes(n.toLowerCase())?' on':''}" data-n="${esc(n)}"><button type="button" class="cn">${esc(n)}</button><button type="button" class="cx" aria-label="Hapus ${esc(n)}">×</button></span>`).join('')
+      : '<span class="kosong">Belum ada nama tersimpan</span>';
+  });
 }
-function muatMemori(){ document.querySelectorAll('.sug:not([hidden])').forEach(el=>renderSaran(el.id.slice(4))); }
+// Ketuk chip: pilih ke kolom kosong berikutnya (ketuk lagi untuk melepas); ×: hapus dari daftar
+function klikChip(g,e){
+  const chip=e.target.closest('.chip'); if(!chip) return;
+  const nama=chip.dataset.n;
+  if(e.target.closest('.cx')){ hapusNama(g.jenis,nama); muatMemori(); toast("Nama dihapus"); return; }
+  const terpakai=g.ids.find(i=>sama($(i).value.trim(),nama));
+  const sasaran=terpakai || g.ids.find(i=>!$(i).value.trim()) || g.ids[g.ids.length-1];
+  $(sasaran).value = terpakai ? "" : nama;
+  updateLaporan(); muatMemori();
+}
 
 let terhubung=false;
-function status(t,cls){ const s=$('syncStatus'); s.textContent=t; s.className='sync'+(cls?' '+cls:''); }
+function status(t,cls){ const s=$('syncStatus'); s.textContent=t; s.className='sync'+(cls?' '+cls:''); const bd=$('badge'); if(bd) bd.className='badge'+(cls==='off'?' off':''); }
 function tampilStatus(){
   const n=jumlahQ();
   if(!SCRIPT_URL) return status("Spreadsheet belum diatur");
