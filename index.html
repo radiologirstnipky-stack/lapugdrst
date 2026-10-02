@@ -191,14 +191,14 @@ textarea{width:100%;height:min(52vh,380px);border:none;resize:none;background:tr
 
 <script>
 /* ====== PENGATURAN ====== */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgrUzsJppU_ckg08XdBJvIjMf8-gJKM0t9gWwpK7sJuKMlLzrIjbxOCmFYkjXjc7g8NQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfpbWm70HTmBLhrBAX3GG4QqVjZNr9AT2XQKepwY_exlp3u0Y2EZz8LW05QEpmtVYy/exec";
 // Jam shift (WIB, 24 jam)
 const SHIFT_PAGI_MULAI = 7, SHIFT_SIANG_MULAI = 14, SHIFT_MALAM_MULAI = 21;
 /* ======================= */
 
 const kategori = ["Militer","PNS","KBT","Masyarakat Umum","Purnawirawan"];
 const $ = id => document.getElementById(id);
-const esc = s => s.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 
 /* ---------- Waktu WIB ---------- */
 function wibSekarang(){
@@ -273,7 +273,6 @@ window.onload = function(){
   window.addEventListener('resize',ukurBar);
 
   ukurBar(); otomatis(); updateLaporan(); buatTopo(); tampilStatus(); sinkronDariSheet();
-
 };
 
 function ukurBar(){ document.documentElement.style.setProperty('--barH',$('bar').offsetHeight+'px'); }
@@ -321,14 +320,15 @@ const bacaLokal = k => bacaJSON(k,[]);
 const QK = ['dokter','perawat','hapus_dokter','hapus_perawat'];
 const bacaQ = () => Object.assign({dokter:[],perawat:[],hapus_dokter:[],hapus_perawat:[]},bacaJSON('q_nama',{}));
 const jumlahQ = () => { const q=bacaQ(); return QK.reduce((t,k)=>t+q[k].length,0); };
-const sama = (a,b) => a.toLowerCase()===b.toLowerCase();
+const sama = (a,b) => String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase();
 const ambilNama = ids => ids.map(i=>$(i).value.trim().replace(/\s+/g," ")).filter(n=>n.length>=2);
+const normal = s => String(s||'').trim().replace(/\s+/g," ");
 
 // Gabung ke daftar lokal; kembalikan nama yang benar-benar baru
 function gabung(kunci,arr){
   const data=bacaLokal(kunci), ada=new Set(data.map(x=>x.toLowerCase())), baru=[];
   arr.forEach(n=>{ if(!ada.has(n.toLowerCase())){data.push(n);ada.add(n.toLowerCase());baru.push(n);} });
-  if(baru.length) tulisJSON(kunci,data.sort((a,b)=>a.localeCompare(b)));
+  if(baru.length) tulisJSON(kunci,data.sort((a,b)=>a.localeCompare(b,'id')));
   return baru;
 }
 /* ---------- Nama tersimpan sebagai chip ---------- */
@@ -351,14 +351,15 @@ function muatMemori(){
 function klikChip(g,e){
   const chip=e.target.closest('.chip'); if(!chip) return;
   const nama=chip.dataset.n;
-  if(e.target.closest('.cx')){ hapusNama(g.jenis,nama); muatMemori(); toast("Nama dihapus"); return; }
+  if(e.target.closest('.cx')){ hapusNama(g.jenis,nama); return; }
   if(g.multi){   // petugas: isi baris kosong berikutnya, tambah baris jika semua terisi
     const baris=barisPetugas(g.multi), ada=baris.find(i=>sama(i.value.trim(),nama));
-    if(ada) ada.value="";
+    if(ada){ ada.value=""; delete ada.dataset.done; }
     else (baris.find(i=>!i.value.trim()) || tambahBaris(g.multi)).value=nama;
   }else{         // dokter: satu nama
     const el=$(g.ids[0]);
-    el.value = sama(el.value.trim(),nama) ? "" : nama;
+    if(sama(el.value.trim(),nama)){ el.value=""; delete el.dataset.done; }
+    else el.value=nama;
   }
   updateLaporan(); muatMemori();
 }
@@ -373,25 +374,45 @@ function tampilStatus(){
   status(terhubung?"Terhubung ke Google Spreadsheet":"Online",terhubung?"ok":"");
 }
 
+/* ---------- Gabungkan daftar server + antrean lokal ---------- */
+// tambah = belum terkirim, hapus = tombstone (belum terkonfirmasi terhapus di server)
+function susunDaftar(arr,tambah,hapus){
+  const buang = new Set((hapus||[]).map(x=>normal(x).toLowerCase()));
+  const seen = new Set(), out = [];
+  [...(arr||[]),...(tambah||[])].forEach(n=>{
+    const nm = normal(n), k = nm.toLowerCase();
+    if(!nm || seen.has(k) || buang.has(k)) return;
+    seen.add(k); out.push(nm);
+  });
+  return out.sort((a,b)=>a.localeCompare(b,'id'));
+}
+function terapkanDaftar(j){
+  const q = bacaQ();
+  tulisJSON('m_dok', susunDaftar(j.dokter,  q.dokter,  q.hapus_dokter));
+  tulisJSON('m_per', susunDaftar(j.perawat, q.perawat, q.hapus_perawat));
+  muatMemori();
+}
+// Buang dari antrean hanya item yang sudah benar-benar terkonfirmasi di server
+function bersihkanAntrian(j){
+  const q = bacaQ();
+  ['dokter','perawat'].forEach(jenis=>{
+    const srv = new Set((j[jenis]||[]).map(x=>normal(x).toLowerCase()));
+    q[jenis]         = q[jenis].filter(n=>!srv.has(normal(n).toLowerCase()));   // sudah ada di server
+    q['hapus_'+jenis]= q['hapus_'+jenis].filter(n=>srv.has(normal(n).toLowerCase())); // sudah tidak ada di server
+  });
+  tulisJSON('q_nama',q);
+}
+
 async function sinkronDariSheet(){
   if(!SCRIPT_URL || !navigator.onLine) return;
   try{
     status("Menyinkronkan nama…");
     await kirimAntrian();
-    const j=await (await fetch(SCRIPT_URL)).json();
-    // Daftar mengikuti spreadsheet; perubahan yang belum terkirim tetap diperhitungkan
-    const q=bacaQ();
-    const susun=(arr,tambah,hapus)=>{
-      const seen=new Set(), out=[];
-      [...arr.map(x=>String(x).trim()),...tambah].forEach(n=>{
-        const k=n.toLowerCase();
-        if(n && !seen.has(k) && !hapus.some(h=>sama(h,n))){ seen.add(k); out.push(n); }
-      });
-      return out.sort((a,b)=>a.localeCompare(b));
-    };
-    if(Array.isArray(j.dokter)) tulisJSON('m_dok',susun(j.dokter,q.dokter,q.hapus_dokter));
-    if(Array.isArray(j.perawat)) tulisJSON('m_per',susun(j.perawat,q.perawat,q.hapus_perawat));
-    muatMemori();
+    const url = SCRIPT_URL + (SCRIPT_URL.includes('?')?'&':'?') + 't=' + Date.now();
+    const j = await (await fetch(url,{cache:'no-store'})).json();
+    if(!j || j.ok !== true) throw new Error((j&&j.error)||'respon tidak valid');
+    bersihkanAntrian(j);
+    terapkanDaftar(j);
     terhubung=true;
   }catch(e){ status("Gagal terhubung ke spreadsheet · memakai data lokal","off"); return; }
   tampilStatus();
@@ -403,16 +424,25 @@ async function kirimAntrian(){
   if(!SCRIPT_URL || mengirim || !jumlahQ()) return tampilStatus();
   if(!navigator.onLine) return tampilStatus();
   mengirim=true;
-  const q=bacaQ();
   try{
-    await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(q)});
-    const sisa=bacaQ();
-    QK.forEach(k=>{ sisa[k]=sisa[k].filter(n=>!q[k].includes(n)); });
-    tulisJSON('q_nama',sisa);
-    terhubung=true; tampilStatus();
-    if(!jumlahQ()) status("Nama tersimpan di Google Spreadsheet","ok");
-  }catch(e){ tampilStatus(); }
+    const q=bacaQ();
+    const res = await fetch(SCRIPT_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(q),
+      redirect:'follow'
+    });
+    const j = await res.json();
+    if(!j || j.ok !== true) throw new Error((j&&j.error)||'gagal');
+    bersihkanAntrian(j);   // ← hanya hapus antrean yang SUDAH terkonfirmasi
+    terapkanDaftar(j);
+    terhubung=true;
+  }catch(e){
+    /* biarkan antrean utuh, dicoba lagi nanti */
+  }
   mengirim=false;
+  tampilStatus();
+  if(!jumlahQ() && terhubung) status("Nama tersimpan di Google Spreadsheet","ok");
 }
 
 // Masukkan nama ke daftar lokal + antrean, lalu coba kirim
@@ -428,7 +458,33 @@ function catatNama(dokter,perawat){
   return kirimAntrian().then(()=>bd.length+bp.length);
 }
 
-// Hapus nama dari daftar lokal dan spreadsheet (masuk antrean jika offline)
+// Hapus nama: bersihkan kolom isian, daftar lokal, lalu antrekan penghapusan ke spreadsheet
+function hapusNama(jenis,nama){
+  const target = normal(nama);
+  if(!target) return;
+
+  // 1) Kosongkan semua kolom isian yang masih memuat nama ini (INI penyebab nama "hidup lagi")
+  document.querySelectorAll('input[type="text"]').forEach(inp=>{
+    if(!sama(inp.value,target)) return;
+    if(jenis==='dokter'  && /^dok_/.test(inp.id)){ inp.value=""; delete inp.dataset.done; }
+    if(jenis==='perawat' && inp.dataset.n){       inp.value=""; delete inp.dataset.done; }
+  });
+
+  // 2) Buang dari daftar lokal
+  const kunci=kunciDari(jenis);
+  tulisJSON(kunci, bacaLokal(kunci).filter(x=>!sama(x,target)));
+
+  // 3) Antrekan penghapusan (sekaligus jadi "tombstone" sampai server konfirmasi)
+  const q=bacaQ();
+  q[jenis]=q[jenis].filter(x=>!sama(x,target));               // batalkan penambahan yang belum terkirim
+  if(!q['hapus_'+jenis].some(x=>sama(x,target))) q['hapus_'+jenis].push(target);
+  tulisJSON('q_nama',q);
+
+  updateLaporan(); muatMemori();
+  tampilStatus(); kirimAntrian();
+  toast("Nama dihapus");
+}
+
 /* ---------- Baris petugas (jumlah bisa ditambah) ---------- */
 const barisPetugas = n => [...$('pl_'+n).querySelectorAll('input')];
 const nilaiPetugas = n => barisPetugas(n).map(i=>i.value.trim().replace(/\s+/g," "));
@@ -451,34 +507,27 @@ function hapusBaris(btn,n){ btn.closest('.prow').remove(); nomori(n); updateLapo
 
 // Enter / selesai mengetik: masuk ke teks laporan + spreadsheet; nama ganda tidak dimasukkan
 function komitPetugas(inp){
-  const n=inp.dataset.n, nama=inp.value.trim().replace(/\s+/g," ");
+  const n=inp.dataset.n, nama=normal(inp.value);
   if(nama.length<2 || inp.dataset.done===nama) return;
-  if(barisPetugas(n).some(i=>i!==inp && sama(i.value.trim(),nama))){
+  if(barisPetugas(n).some(i=>i!==inp && sama(i.value,nama))){
     inp.value=""; delete inp.dataset.done; updateLaporan(); muatMemori(); toast("Nama sudah ada di shift ini"); return;
   }
   inp.value=nama; inp.dataset.done=nama; updateLaporan();
   catatNama([],[nama]).then(j=>toast(j?"Nama disimpan":"Nama sudah ada di daftar"));
 }
 
-function hapusNama(jenis,nama){
-  if(jenis==='perawat'){ document.querySelectorAll('.plist input').forEach(i=>{ if(sama(i.value.trim(),nama)) i.value=""; }); updateLaporan(); }
-  const kunci=kunciDari(jenis);
-  tulisJSON(kunci,bacaLokal(kunci).filter(x=>!sama(x,nama)));
-  const q=bacaQ();
-  q[jenis]=q[jenis].filter(x=>!sama(x,nama));          // belum sempat terkirim: batalkan
-  if(!q['hapus_'+jenis].some(x=>sama(x,nama))) q['hapus_'+jenis].push(nama);
-  tulisJSON('q_nama',q);
-  tampilStatus(); kirimAntrian();
-}
-
 // Otomatis: dipanggil saat kolom nama selesai diisi, serta saat Salin / WhatsApp
 function autoSimpan(){
-  catatNama(ambilNama(['dok_1','dok_2']), [...nilaiPetugas(1),...nilaiPetugas(2)].filter(n=>n.length>=2));
+  const q=bacaQ();
+  const buang=new Set([...q.hapus_dokter,...q.hapus_perawat].map(x=>normal(x).toLowerCase()));
+  const dokter=ambilNama(['dok_1','dok_2']).filter(n=>!buang.has(n.toLowerCase()));
+  const perawat=[...nilaiPetugas(1),...nilaiPetugas(2)].filter(n=>n.length>=2 && !buang.has(n.toLowerCase()));
+  catatNama(dokter,perawat);
 }
 
 /* ---------- Tambah nama manual (tombol ＋ di samping input) ---------- */
 async function tambahNama(id,jenis,btn){
-  const nama=$(id).value.trim().replace(/\s+/g," ");
+  const nama=normal($(id).value);
   if(nama.length<2){ $(id).focus(); toast("Isi nama dulu"); return; }
   const dokter=jenis==='dokter';
   const jumlah=await catatNama(dokter?[nama]:[], dokter?[]:[nama]);
