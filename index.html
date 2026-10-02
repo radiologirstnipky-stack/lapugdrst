@@ -63,13 +63,18 @@ h2{text-align:center;font-weight:700;font-size:20px;margin:6px 0 4px}
 .blk-h select{border:1px solid #3a3a3a;border-radius:10px;background:#101010;color:var(--yellow);font-family:inherit;font-weight:600;font-size:15px;height:40px;padding:0 10px}
 .blk-h select option{background:#1a1a1a;color:#fff}
 .nf{margin-top:14px}
-.nf label{display:block;font-size:12px;color:var(--gray);margin:0 0 5px 2px}
+.nf label,.nf .lbl{display:block;font-size:12px;color:var(--gray);margin:0 0 5px 2px}
 .nf .line{display:flex;gap:8px}
 .nf input{flex:1;min-width:0;height:44px;border:1px solid #3a3a3a;border-radius:10px;background:#101010;padding:0 12px;font-size:16px;color:var(--text);font-family:inherit}
 .nf input:focus,.nf input:focus-visible{outline:none;border-color:var(--yellow)}
 .nf .plus{width:44px;height:44px;margin:0;border:none;border-radius:10px;background:var(--yellow);color:#000;font-size:22px;font-weight:700}
 .nf .plus:hover{background:#ffe34d}
 .nf .plus.ok{background:#fff}
+.prow{display:flex;gap:8px;animation:rowIn .2s ease}
+.prow+.prow{margin-top:8px}
+@keyframes rowIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.nf .plus.hapus{background:#2a1515;color:#ff453a;border:1px solid #5a2a2a;font-size:18px}
+.nf .plus.hapus:hover{background:#3d1b1b}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .chip{display:inline-flex;align-items:center;border:1px solid #3a3a3a;background:#1a1a1a;border-radius:999px;overflow:hidden;transition:background .15s,border-color .15s}
 .chip button{border:none;background:transparent;font-family:inherit;cursor:pointer;touch-action:manipulation}
@@ -140,16 +145,14 @@ textarea{width:100%;height:min(52vh,380px);border:none;resize:none;background:tr
         <div class="blk-h"><span class="role">Menyerahkan</span><select id="dinas_1" aria-label="Jenis dinas (Menyerahkan)"><option>Dinas Pagi</option><option>Dinas Siang</option><option>Dinas Malam</option></select></div>
         <div class="nf"><label for="dok_1">Dokter jaga</label><div class="line"><input type="text" id="dok_1" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('dok_1','dokter',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
         <div class="chips" id="ch_dok_1"></div>
-        <div class="nf"><label for="per_1_1">Petugas 1</label><div class="line"><input type="text" id="per_1_1" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('per_1_1','perawat',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
-        <div class="nf"><label for="per_1_2">Petugas 2</label><div class="line"><input type="text" id="per_1_2" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('per_1_2','perawat',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
+        <div class="nf"><div class="lbl" id="plbl_1">Petugas</div><div class="plist" id="pl_1"></div></div>
         <div class="chips" id="ch_per_1"></div>
       </div>
       <div class="blk">
         <div class="blk-h"><span class="role">Menerima</span><select id="dinas_2" aria-label="Jenis dinas (Menerima)"><option>Dinas Pagi</option><option>Dinas Siang</option><option>Dinas Malam</option></select></div>
         <div class="nf"><label for="dok_2">Dokter jaga</label><div class="line"><input type="text" id="dok_2" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('dok_2','dokter',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
         <div class="chips" id="ch_dok_2"></div>
-        <div class="nf"><label for="per_2_1">Petugas 1</label><div class="line"><input type="text" id="per_2_1" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('per_2_1','perawat',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
-        <div class="nf"><label for="per_2_2">Petugas 2</label><div class="line"><input type="text" id="per_2_2" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done"><button type="button" class="plus" onclick="tambahNama('per_2_2','perawat',this)" aria-label="Simpan nama ke spreadsheet" title="Simpan ke spreadsheet">＋</button></div></div>
+        <div class="nf"><div class="lbl" id="plbl_2">Petugas</div><div class="plist" id="pl_2"></div></div>
         <div class="chips" id="ch_per_2"></div>
       </div>
       </div>
@@ -214,7 +217,7 @@ function otomatis(){
 }
 
 /* ---------- Init ---------- */
-const NAMA_IDS = ['dok_1','dok_2','per_1_1','per_1_2','per_2_1','per_2_2'];
+const NAMA_IDS = ['dok_1','dok_2'];   // kolom dokter
 window.onload = function(){
   $('waktu_laporan').value = wibSekarang();
 
@@ -225,13 +228,25 @@ window.onload = function(){
           <div class="stepper"><button onclick="step('${kat}_${j}',-1)" aria-label="Kurangi ${kat} ${j}">−</button><span id="${kat}_${j}">0</span><button onclick="step('${kat}_${j}',1)" aria-label="Tambah ${kat} ${j}">+</button></div></div>`).join('')}
       </div></div>`).join('');
 
+  tambahBaris(1); tambahBaris(2);
+  [1,2].forEach(n=>{
+    const box=$('pl_'+n);
+    box.addEventListener('input',()=>{ updateLaporan(); muatMemori(); });
+    box.addEventListener('change',e=>komitPetugas(e.target));
+    box.addEventListener('keydown',e=>{
+      if(e.key!=='Enter' || e.target.tagName!=='INPUT') return;
+      e.preventDefault(); komitPetugas(e.target);
+      const next=e.target.closest('.prow').nextElementSibling;
+      if(next) next.querySelector('input').focus(); else e.target.blur();
+    });
+  });
   muatMemori();
   ['ucapan','dinas_1','dinas_2'].forEach(id=>$(id).addEventListener('change',()=>{manual[id]=true;}));
   $('waktu_laporan').addEventListener('change',()=>{ for(const k in manual) delete manual[k]; otomatis(); updateLaporan(); });
   document.querySelectorAll('input, select').forEach(el=>el.addEventListener('input',updateLaporan));
   NAMA_IDS.forEach(id=>{
     const el=$(id);
-    el.addEventListener('change',autoSimpan);
+    el.addEventListener('change',()=>{ autoSimpan(); muatMemori(); });
     el.addEventListener('input',muatMemori);
     el.addEventListener('keydown',e=>{
       if(e.key!=='Enter') return;
@@ -270,9 +285,9 @@ function updateLaporan(){
   });
   $('display_total').innerText=total+" Orang";
   const v=id=>$(id).value.trim();
-  const p2=id=>v(id)?"\n- "+v(id):"";
+  const lst=n=>{ const seen=new Set(); return nilaiPetugas(n).map(x=>{ if(!x) return "- ..."; const k=x.toLowerCase(); if(seen.has(k)) return null; seen.add(k); return "- "+x; }).filter(Boolean).join("\n"); };
   $('hasil_teks').value =
-`${v('ucapan')}\n\nKepada Yth. Karumkit TK. IV 12.07.03 Palangkaraya\n\n*Mohon Izin Melaporkan Serah Terima Dinas UNIT GAWAT DARURAT Rumah Sakit TNI AD*\n${tgl}, sebagai berikut :\n\n*${v('dinas_1')}*\n- ${v('dok_1')||"..."}\n- ${v('per_1_1')||"..."}${p2('per_1_2')}\n\n*${v('dinas_2')}*\n- ${v('dok_2')||"..."}\n- ${v('per_2_1')||"..."}${p2('per_2_2')}\n\n*Total Pasien : ${total} Orang*\n\nKETERANGAN :\n${ket.trim()}\n\nRumkit TNI-AD dalam keadaan aman, sekian Laporan selesai.\nTerimakasih 🙏🏻`;
+`${v('ucapan')}\n\nKepada Yth. Karumkit TK. IV 12.07.03 Palangkaraya\n\n*Mohon Izin Melaporkan Serah Terima Dinas UNIT GAWAT DARURAT Rumah Sakit TNI AD*\n${tgl}, sebagai berikut :\n\n*${v('dinas_1')}*\n- ${v('dok_1')||"..."}\n${lst(1)}\n\n*${v('dinas_2')}*\n- ${v('dok_2')||"..."}\n${lst(2)}\n\n*Total Pasien : ${total} Orang*\n\nKETERANGAN :\n${ket.trim()}\n\nRumkit TNI-AD dalam keadaan aman, sekian Laporan selesai.\nTerimakasih 🙏🏻`;
 }
 
 /* ---------- Pratinjau slide up ---------- */
@@ -308,25 +323,30 @@ const jenisDari = id => id.startsWith('dok')?'dokter':'perawat';
 const kunciDari = j => j==='dokter'?'m_dok':'m_per';
 const GRUP = [1,2].flatMap(n=>[
   {box:`ch_dok_${n}`, jenis:'dokter',  ids:[`dok_${n}`]},
-  {box:`ch_per_${n}`, jenis:'perawat', ids:[`per_${n}_1`,`per_${n}_2`]}
+  {box:`ch_per_${n}`, jenis:'perawat', ids:[], multi:n}
 ]);
 function muatMemori(){
   GRUP.forEach(g=>{
-    const dipakai=g.ids.map(i=>$(i).value.trim().toLowerCase());
+    const dipakai=g.multi ? nilaiPetugas(g.multi).map(x=>x.toLowerCase()) : g.ids.map(i=>$(i).value.trim().toLowerCase());
     const daftar=bacaLokal(kunciDari(g.jenis));
     $(g.box).innerHTML = daftar.length
       ? daftar.map(n=>`<span class="chip${dipakai.includes(n.toLowerCase())?' on':''}" data-n="${esc(n)}"><button type="button" class="cn">${esc(n)}</button><button type="button" class="cx" aria-label="Hapus ${esc(n)}">×</button></span>`).join('')
       : '<span class="kosong">Belum ada nama tersimpan</span>';
   });
 }
-// Ketuk chip: pilih ke kolom kosong berikutnya (ketuk lagi untuk melepas); ×: hapus dari daftar
+// Ketuk chip: pilih (ketuk lagi untuk melepas); ×: hapus dari daftar
 function klikChip(g,e){
   const chip=e.target.closest('.chip'); if(!chip) return;
   const nama=chip.dataset.n;
   if(e.target.closest('.cx')){ hapusNama(g.jenis,nama); muatMemori(); toast("Nama dihapus"); return; }
-  const terpakai=g.ids.find(i=>sama($(i).value.trim(),nama));
-  const sasaran=terpakai || g.ids.find(i=>!$(i).value.trim()) || g.ids[g.ids.length-1];
-  $(sasaran).value = terpakai ? "" : nama;
+  if(g.multi){   // petugas: isi baris kosong berikutnya, tambah baris jika semua terisi
+    const baris=barisPetugas(g.multi), ada=baris.find(i=>sama(i.value.trim(),nama));
+    if(ada) ada.value="";
+    else (baris.find(i=>!i.value.trim()) || tambahBaris(g.multi)).value=nama;
+  }else{         // dokter: satu nama
+    const el=$(g.ids[0]);
+    el.value = sama(el.value.trim(),nama) ? "" : nama;
+  }
   updateLaporan(); muatMemori();
 }
 
@@ -396,7 +416,39 @@ function catatNama(dokter,perawat){
 }
 
 // Hapus nama dari daftar lokal dan spreadsheet (masuk antrean jika offline)
+/* ---------- Baris petugas (jumlah bisa ditambah) ---------- */
+const barisPetugas = n => [...$('pl_'+n).querySelectorAll('input')];
+const nilaiPetugas = n => barisPetugas(n).map(i=>i.value.trim().replace(/\s+/g," "));
+function nomori(n){
+  const r=barisPetugas(n);
+  r.forEach((i,k)=>i.setAttribute('aria-label','Petugas '+(k+1)));
+  $('plbl_'+n).textContent = r.length>1 ? `Petugas (${r.length})` : 'Petugas';
+}
+function tambahBaris(n,fokus){
+  const pertama=!$('pl_'+n).children.length;
+  const d=document.createElement('div'); d.className='prow';
+  d.innerHTML=`<input type="text" data-n="${n}" placeholder="Ketik nama, lalu Enter" autocomplete="off" enterkeyhint="done">`+
+    (pertama ? `<button type="button" class="plus" aria-label="Tambah petugas" title="Tambah petugas" onclick="tambahBaris(${n},true)">＋</button>`
+             : `<button type="button" class="plus hapus" aria-label="Hapus baris petugas" title="Hapus" onclick="hapusBaris(this,${n})">✕</button>`);
+  $('pl_'+n).appendChild(d); nomori(n); updateLaporan();
+  const inp=d.querySelector('input'); if(fokus) inp.focus();
+  return inp;
+}
+function hapusBaris(btn,n){ btn.closest('.prow').remove(); nomori(n); updateLaporan(); muatMemori(); }
+
+// Enter / selesai mengetik: masuk ke teks laporan + spreadsheet; nama ganda tidak dimasukkan
+function komitPetugas(inp){
+  const n=inp.dataset.n, nama=inp.value.trim().replace(/\s+/g," ");
+  if(nama.length<2 || inp.dataset.done===nama) return;
+  if(barisPetugas(n).some(i=>i!==inp && sama(i.value.trim(),nama))){
+    inp.value=""; delete inp.dataset.done; updateLaporan(); muatMemori(); toast("Nama sudah ada di shift ini"); return;
+  }
+  inp.value=nama; inp.dataset.done=nama; updateLaporan();
+  catatNama([],[nama]).then(j=>toast(j?"Nama disimpan":"Nama sudah ada di daftar"));
+}
+
 function hapusNama(jenis,nama){
+  if(jenis==='perawat'){ document.querySelectorAll('.plist input').forEach(i=>{ if(sama(i.value.trim(),nama)) i.value=""; }); updateLaporan(); }
   const kunci=kunciDari(jenis);
   tulisJSON(kunci,bacaLokal(kunci).filter(x=>!sama(x,nama)));
   const q=bacaQ();
@@ -408,7 +460,7 @@ function hapusNama(jenis,nama){
 
 // Otomatis: dipanggil saat kolom nama selesai diisi, serta saat Salin / WhatsApp
 function autoSimpan(){
-  catatNama(ambilNama(['dok_1','dok_2']), ambilNama(['per_1_1','per_1_2','per_2_1','per_2_2']));
+  catatNama(ambilNama(['dok_1','dok_2']), [...nilaiPetugas(1),...nilaiPetugas(2)].filter(n=>n.length>=2));
 }
 
 /* ---------- Tambah nama manual (tombol ＋ di samping input) ---------- */
